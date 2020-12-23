@@ -7,15 +7,15 @@ with open('README.md') as file:
 
 # TODO - replace with details of your project
 setup(
-    name='NAME',
-    description='',
+    name='audio_utils',
+    description='audio utilities 4 me :)',
     version='0.0.1',
     author='Hugo Flores Garcia',
     author_email='hf01049@georgiasouthern.edu',
-    url='https://github.com/hugofloresgarcia/NAME',
-    install_requires=['pytorch-lightning'],
+    url='https://github.com/hugofloresgarcia/audio_utils',
+    install_requires=['numpy', 'librosa'],
     packages=['NAME'],
-    package_data={'NAME': ['assets/*']},
+    package_data={'audio_utils': ['assets/*']},
     long_description=long_description,
     long_description_content_type='text/markdown',
     keywords=[],
