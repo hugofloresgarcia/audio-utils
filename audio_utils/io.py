@@ -25,7 +25,7 @@ def load_audio_file(path_to_audio, sample_rate=48000):
 
 def _add_file_format_to_filename(path: str, file_format: str):
     if '.' not in file_format:
-        file_format = f'.{file_format'
+        file_format = f'.{file_format}'
 
     if Path(path).suffix != file_format:
         path = path.with_suffix(file_format)
