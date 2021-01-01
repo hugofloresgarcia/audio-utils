@@ -4,6 +4,8 @@ import librosa
 import numpy as np
 import soundfile as sf
 
+import audio_utils as au
+
 #######
 # I/O #
 #######
@@ -23,7 +25,7 @@ def load_audio_file(path_to_audio, sample_rate=48000):
 
 def _add_file_format_to_filename(path: str, file_format: str):
     if Path(path).suffix != file_format:
-        path = path + file_format
+        path = path.with_suffix(file_format)
     return path
 
 def write_audio_file(audio: np.ndarray, path_to_audio: str, sample_rate: int, 
@@ -47,7 +49,7 @@ def write_audio_file(audio: np.ndarray, path_to_audio: str, sample_rate: int,
     if path_to_audio.exists() and not exist_ok:
         raise FileExistsError(f'{path_to_audio} exists. cant save audio')
 
-    _check_audio_types(audio)
+    au._check_audio_types(audio)
     assert audio.ndim == 2
     
     # reshape array to (samples, channels for sf)
