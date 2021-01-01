@@ -1,8 +1,13 @@
 import warnings
+from pathlib import Path
 
 import numpy as np
 import librosa
+import soundfile as sf
 
+############
+# CHECKING #
+############
 def _check_audio_types(audio: np.ndarray):
     assert isinstance(audio, np.ndarray), f'expected np.ndarray but got {type(audio)} as input.'
     assert audio.ndim == 2, f'audio must be shape (channels, time), got shape {audio.shape}'
@@ -20,6 +25,21 @@ def _is_mono(audio: np.ndarray):
 def _is_zero(audio: np.ndarray):
     return np.all(audio == 0);
 
+def librosa_input_wrap(audio: np.ndarray):
+    _check_audio_types(audio)
+    if _is_mono(audio): 
+        audio = audio[0]
+    return audio
+
+def librosa_output_wrap(audio: np.ndarray):
+    if audio.ndim == 1:
+        audio = np.expand_dims(audio, axis=0)
+    return  audio
+
+#######
+# I/O #
+#######
+
 def load_audio_file(path_to_audio, sample_rate=48000):
     """ wrapper for loading monophonic audio with librosa
     Args:
@@ -32,6 +52,62 @@ def load_audio_file(path_to_audio, sample_rate=48000):
     # add channel dimension
     audio = np.expand_dims(audio, axis=-2)
     return audio
+
+def _add_file_format_to_filename(path: str, file_format: str):
+    if Path(path).suffix != file_format:
+        path = path + file_format
+    return path
+
+def write_audio_file(audio: np.ndarray, path_to_audio: str, sample_rate: int, 
+                     audio_format='flac', exist_ok=False):
+    """write audio file to disk, raises an error if file exists
+
+    Args:
+        audio (np.ndarray): audio array shape (channels, samples)
+        path_to_audio (str): save path
+        sample_rate (int, optional): Sample rate corresponding to the audio array. 
+                                    This function does not resample
+        audio_format (str, optional): save format
+
+    """
+    ok_audio_formats = ('flac', 'ogg', 'wav')
+    assert audio_format in ok_audio_formats, f'expected one of {ok_audio_formats} but got {audio_format}'
+
+    path_to_audio = _add_file_format_to_filename(path_to_audio, audio_format)
+    path_to_audio = Path(path_to_audio)
+
+    if path_to_audio.exists() and not exist_ok:
+        raise FileExistsError(f'{path_to_audio} exists. cant save audio')
+
+    _check_audio_types(audio)
+    assert audio.ndim == 2
+    
+    # reshape array to (samples, channels for sf)
+    audio = np.reshape(audio, (audio.shape[1], audio.shape[0]))
+    sf.write(path_to_audio, audio, sample_rate)
+
+#########
+# UTILS #
+######### 
+
+def split_on_silence(audio: np.ndarray, top_db: int = 45):
+
+    audio = librosa_input_wrap(audio)
+    timestamps = librosa.effects.split(audio, top_db=top_db)
+
+    return timestamps
+
+def get_audio_from_timestamp(audio: np.ndarray, sr: int, timestamp: tuple) -> np.ndarray:
+    """get audio subarray from a timestamp
+
+    Args:
+        audio ([np.ndarray]): audio array with shape (channels, samples)
+        sr ([int]): sample rate
+        timestamp ([np.ndarray]): np.ndarray with shape (start_time, end_time) (in seconds)
+    """
+    _check_audio_types(audio)
+    idxs = timestamp * sr
+    return audio[idxs[0], idxs[1]]
 
 def window(audio: np.ndarray, window_len: int = 48000, hop_len: int = 4800):
     """split audio into overlapping windows
