@@ -1,2 +1,2 @@
-import io
+import .io
 from .core import *
