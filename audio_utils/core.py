@@ -41,7 +41,7 @@ def _coalesce_timestamps(timestamps: np.ndarray, condition: callable):
 
     last_start_time = timestamps[0][0]
     last_end_time = timestamps[0][1]
-    for i in range(1, len(timestamps)+1):
+    for i in range(1, len(timestamps)):
         start_time, end_time = timestamps[i]
         if condition(last_end_time, start_time):
             last_end_time = end_time
