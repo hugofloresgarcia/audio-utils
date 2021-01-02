@@ -46,15 +46,13 @@ def _coalesce_timestamps(timestamps: np.ndarray, condition: callable):
         if condition(last_end_time, start_time):
             last_end_time = end_time
         else:
-            ts = [last_start_time, end_time]
+            ts = [last_start_time, last_end_time]
             coalesced_timestamps.append(ts)
             last_start_time = start_time
             last_end_time = end_time
-
+    ts = [last_start_time, last_end_time]
+    coalesced_timestamps.append(ts)
     coalesced_timestamps = np.array(coalesced_timestamps)
-
-    print(timestamps)
-    print(coalesced_timestamps)
 
     return coalesced_timestamps
 
@@ -68,10 +66,9 @@ def split_on_silence(audio: np.ndarray, sr: int, top_db: int = 45, min_silence_d
     """
     audio = librosa_input_wrap(audio)
     timestamps = librosa.effects.split(audio, top_db=top_db)
-
-    timestamps = _coalesce_timestamps(timestamps, condition=lambda e, s: abs((s-e)*sr) < min_silence_duration )
-
-    return timestamps
+    np.set_printoptions(suppress=True)
+    timestamps = _coalesce_timestamps(timestamps, condition=lambda e, s: abs((s-e)/sr) < min_silence_duration )
+    return timestamps / sr
 
 def get_audio_from_timestamp(audio: np.ndarray, sr: int, timestamp: tuple) -> np.ndarray:
     """get audio subarray from a timestamp
@@ -83,7 +80,7 @@ def get_audio_from_timestamp(audio: np.ndarray, sr: int, timestamp: tuple) -> np
     """
     _check_audio_types(audio)
     idxs = timestamp * sr
-    return audio[idxs[0], idxs[1]]
+    return audio[:, int(idxs[0]):int(idxs[1])]
 
 def window(audio: np.ndarray, window_len: int = 48000, hop_len: int = 4800):
     """split audio into overlapping windows
