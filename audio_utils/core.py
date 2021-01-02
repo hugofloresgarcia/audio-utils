@@ -34,14 +34,50 @@ def librosa_output_wrap(audio: np.ndarray):
         audio = np.expand_dims(audio, axis=0)
     return  audio
 
+def _coalesce_timestamps(timestamps: np.ndarray, condition: callable):
+    """ coalesce timestamps in a timestamp matrix if a callable returns true
+    """
+    ret = {'labels':[]}
+
+    last_label = ''
+    for time, label in enumerate(labels):
+        if label != last_label:
+            ret['labels'].append({'label':label, 'start':time})
+            last_label = label
+
+    coalesced_timestamps = []
+
+    last_start_time = timestamps[0][0]
+    last_end_time = timestamps[0][1]
+    for i in range(1, len(timestamps)+1):
+        start_time, end_time = timestamps[i]
+        if condition(last_end_time, start_time):
+            last_end_time = end_time
+        else:
+            ts = [last_start_time, end_time]
+            coalesced_timestamps.append(ts)
+            last_start_time = start_time
+            last_end_time = end_time
+
+    coalesced_timestamps = np.array(coalesced_timestamps)
+
+    print(timestamps)
+    print(coalesced_timestamps)
+
+    return coalesced_timestamps
+
 #########
 # UTILS #
 ######### 
 
-def split_on_silence(audio: np.ndarray, top_db: int = 45):
-
+def split_on_silence(audio: np.ndarray, sr: int, top_db: int = 45, min_silence_duration: int = 0.3):
+    """ Wrapper for librosa.effects.split, with an added min_silence_duration parameter. 
+    That is, it will coalesce timestamps if the silence in between them is less than min_silence_duration
+    """
     audio = librosa_input_wrap(audio)
     timestamps = librosa.effects.split(audio, top_db=top_db)
+
+    timestamps = _coalesce_timestamps(timestamps, condition=lambda e, s: abs((s-e)*sr) < min_silence_duration )
 
     return timestamps
 
