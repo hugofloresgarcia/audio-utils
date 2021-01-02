@@ -37,14 +37,6 @@ def librosa_output_wrap(audio: np.ndarray):
 def _coalesce_timestamps(timestamps: np.ndarray, condition: callable):
     """ coalesce timestamps in a timestamp matrix if a callable returns true
     """
-    ret = {'labels':[]}
-
-    last_label = ''
-    for time, label in enumerate(labels):
-        if label != last_label:
-            ret['labels'].append({'label':label, 'start':time})
-            last_label = label
-
     coalesced_timestamps = []
 
     last_start_time = timestamps[0][0]
