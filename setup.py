@@ -12,7 +12,7 @@ setup(
     author='Hugo Flores Garcia',
     author_email='hf01049@georgiasouthern.edu',
     url='https://github.com/hugofloresgarcia/audio_utils',
-    install_requires=['numpy', 'librosa'],
+    install_requires=['numpy', 'librosa', 'sox'],
     packages=['audio_utils'],
     package_data={'audio_utils': ['assets/*']},
     long_description=long_description,

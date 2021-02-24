@@ -1,10 +1,11 @@
+import os
 from pathlib import Path
 
 import librosa
 import numpy as np
 import soundfile as sf
 
-import audio_utils as au
+from .core import _check_audio_types
 
 #######
 # I/O #
@@ -49,12 +50,14 @@ def write_audio_file(audio: np.ndarray, path_to_audio: str, sample_rate: int,
     path_to_audio = _add_file_format_to_filename(path_to_audio, audio_format)
     path_to_audio = Path(path_to_audio)
 
+    os.makedirs(path_to_audio.parent, exist_ok=True)
+
     if path_to_audio.exists() and not exist_ok:
         raise FileExistsError(f'{path_to_audio} exists. cant save audio')
 
-    au._check_audio_types(audio)
+    _check_audio_types(audio)
     assert audio.ndim == 2
     
     # reshape array to (samples, channels for sf)
     audio = np.reshape(audio, (audio.shape[1], audio.shape[0]))
-    sf.write(path_to_audio, audio, sample_rate)
+    sf.write(str(path_to_audio), audio, sample_rate, 'PCM_24')

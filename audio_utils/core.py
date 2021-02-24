@@ -2,6 +2,9 @@ import warnings
 
 import numpy as np
 import librosa
+import sox
+
+#TODO: add effects from instrument_recognition.utils
 
 ############
 # CHECKING #
@@ -12,8 +15,6 @@ def _check_audio_types(audio: np.ndarray):
     if audio.shape[-1] < audio.shape[-2]:
         warnings.warn(f'got audio shape {audio.shape}. Audio should be (channels, time). \
                         typically, the number of samples is much larger than the number of channels. ')
-    if _is_zero(audio):
-        warnings.warn(f'provided audio array is all zeros')
 
 def _is_mono(audio: np.ndarray):
     _check_audio_types(audio)
@@ -46,15 +47,13 @@ def _coalesce_timestamps(timestamps: np.ndarray, condition: callable):
         if condition(last_end_time, start_time):
             last_end_time = end_time
         else:
-            ts = [last_start_time, end_time]
+            ts = [last_start_time, last_end_time]
             coalesced_timestamps.append(ts)
             last_start_time = start_time
             last_end_time = end_time
-
+    ts = [last_start_time, last_end_time]
+    coalesced_timestamps.append(ts)
     coalesced_timestamps = np.array(coalesced_timestamps)
-
-    print(timestamps)
-    print(coalesced_timestamps)
 
     return coalesced_timestamps
 
@@ -68,10 +67,9 @@ def split_on_silence(audio: np.ndarray, sr: int, top_db: int = 45, min_silence_d
     """
     audio = librosa_input_wrap(audio)
     timestamps = librosa.effects.split(audio, top_db=top_db)
-
-    timestamps = _coalesce_timestamps(timestamps, condition=lambda e, s: abs((s-e)*sr) < min_silence_duration )
-
-    return timestamps
+    np.set_printoptions(suppress=True)
+    timestamps = _coalesce_timestamps(timestamps, condition=lambda e, s: abs((s-e)/sr) < min_silence_duration )
+    return timestamps / sr
 
 def get_audio_from_timestamp(audio: np.ndarray, sr: int, timestamp: tuple) -> np.ndarray:
     """get audio subarray from a timestamp
@@ -83,7 +81,7 @@ def get_audio_from_timestamp(audio: np.ndarray, sr: int, timestamp: tuple) -> np
     """
     _check_audio_types(audio)
     idxs = timestamp * sr
-    return audio[idxs[0], idxs[1]]
+    return audio[:, int(idxs[0]):int(idxs[1])]
 
 def window(audio: np.ndarray, window_len: int = 48000, hop_len: int = 4800):
     """split audio into overlapping windows
@@ -101,7 +99,7 @@ def window(audio: np.ndarray, window_len: int = 48000, hop_len: int = 4800):
     _check_audio_types(audio)
     # determine how many window_len windows we can get out of the audio array
     # use ceil because we can zero pad
-    n_chunks = int(np.ceil(len(audio)/(window_len))) 
+    n_chunks = int(np.ceil(audio.shape[-1]/(window_len))) 
     start_idxs = np.arange(0, n_chunks * window_len, hop_len)
 
     windows = []
@@ -109,7 +107,7 @@ def window(audio: np.ndarray, window_len: int = 48000, hop_len: int = 4800):
         # end index should be start index + window length
         end_idx = start_idx + window_len
         # BUT, if we have reached the end of the audio, stop there
-        end_idx = min([end_idx, len(audio)])
+        end_idx = min([end_idx, audio.shape[-1]])
         # create audio window
         win = np.array(audio[:, start_idx:end_idx])
         # zero pad window if needed
