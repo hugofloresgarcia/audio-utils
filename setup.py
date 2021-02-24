@@ -5,7 +5,6 @@ with open('README.md') as file:
     long_description = file.read()
 
 
-# TODO - replace with details of your project
 setup(
     name='audio_utils',
     description='audio utilities 4 me :)',
@@ -13,7 +12,7 @@ setup(
     author='Hugo Flores Garcia',
     author_email='hf01049@georgiasouthern.edu',
     url='https://github.com/hugofloresgarcia/audio_utils',
-    install_requires=['numpy', 'librosa'],
+    install_requires=['numpy', 'librosa==0.6.0'],
     packages=['audio_utils'],
     package_data={'audio_utils': ['assets/*']},
     long_description=long_description,
